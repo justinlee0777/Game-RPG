@@ -1,0 +1,446 @@
+package Game.Characters;
+import Game.*;
+
+import java.awt.*;
+
+public class Frog extends Enemy{  
+  private Battler[] boundBattlers;
+  private int numBounders;
+  private boolean isBinding;
+  private Sprite tongue;
+  private Dimension tongStretch;
+  private int damageThreshold;
+  
+  
+  
+  public Frog(AttackType[] skills, Rectangle[] skilRects, Rectangle[] proj, int numSkills, Game.Member[] c, Party pp){
+    super("Frog", skills, numSkills);
+    sprite = new FrogSprite(skilRects, proj, numSkills);
+    pcs = c;
+    pparty = pp;
+    speed = 1.2f;
+    setStats();
+  }
+
+  public Frog(int lvl, AttackType[] skills, Rectangle[] skilRects, Rectangle[] proj, int numSkills, Member[] c, Party pp){
+    super("Frog", lvl, skills, numSkills);
+    sprite = new FrogSprite(skilRects, proj, numSkills);
+    pcs = c;
+    pparty = pp;
+    speed = (lvl == 1) ? 0.9f : 1.2f;
+    setStats();
+  }
+
+    public void addStats(){}
+    public void gradeNextBat(){}
+    public void gradeNextCom(){}
+    public void gradeNextMag(){}   
+  
+  public void fightAlgorithm(){
+    Member c = choosePlayer();
+    if(c == null || isBinding){
+      Member[] pc = new Member[1];
+      pc[0] = c;
+      setTargets(pc, 0); 
+      chooseSkill(AttackType.WAIT.v2);
+    }
+    else{
+      Battler[] b = new Battler[1];
+      b[0] = c;
+      setTargets(b, 1);
+      if(level == 1 || !isBinding && chooseSkill.nextBoolean()){
+        chooseSkill(AttackType.Skill.Tongue);
+      }
+      else{
+        chooseSkill(AttackType.Skill.NONE);
+      }
+    }
+  }
+  
+  public void clearStatus(){
+    isBinding = false;
+    ((FrogSprite)sprite).movingSprite = null;
+    for(int i = 0; i < numBounders; i++)
+      boundBattlers[i].removeBind();
+    super.clearStatus();
+  }
+  
+  public class FrogSprite extends BattleSprite{
+    //series of sprites to be moved
+    protected SpriteInfo[] info;
+    protected float numRepeat;
+    //current set of movement
+    protected Sprite movingSprite;
+    protected Rectangle movingBounds;
+    protected int animMove;
+    protected Dimension move;
+    protected int numMoves;
+    protected boolean repeatSprite;
+    //a series of instructions indicating how and when the sprite moves
+    protected int motionCounter;
+    protected int moveCounter;
+    //decides whether to repeat a sprite
+    public FrogSprite(Rectangle[] skilRects, Rectangle[] proj, int numSkills){
+      super("Game/Frog.png", 20, 20, new Rectangle(280, 0, 20, 20), new Rectangle(300, 0, 20, 20), skilRects, proj, numSkills, new Rectangle(304, 24, 16, 16), Frog.this,
+            new Rectangle(0, 0, 80, 20), new Rectangle(80, 0, 60, 20), new Rectangle(140, 0, 80, 20), new Rectangle(220, 0, 60, 20), new Rectangle(0, 0, 20, 20));
+    }
+    
+    public int fframetime(){
+      return fframetime(currSkill);
+    }
+    public int fframetime(AttackType.Skill skill){
+      switch(skill){
+        case NONE:
+          return (100 * numFrames)*5;
+        case Tongue: 
+          return (100 * numFrames)*4;
+        case Item: return 100;
+      }
+      return 100 * numFrames;
+    }
+    
+    public void standFrame(){
+      super.standFrame();
+      if(!isBinding)
+        movingSprite = null;
+      else{
+        actionFrame(boundBattlers[0]);
+        x+=20;
+      }
+    }
+    
+    public void standFrame(Point p){
+      super.standFrame(p);
+      if(!isBinding)
+        movingSprite = null;
+      else{
+        actionFrame(boundBattlers[0]);
+        x+=20;
+      }
+    }
+    
+    public void hitFrame(){
+      super.hitFrame();
+      if(isBinding){
+        actionFrame(boundBattlers[0]);
+      }
+    }
+    
+    public void actionFrame(Battler b){
+      switch(ActorSprite.determineDirection(new Point(dx, dy), new Point(b.sprite.dx, b.sprite.dy))){
+        case Down:
+          x = 0;
+          y = 20;
+          break;
+        case Right:
+          x = 40;
+          y = 20;
+          break;
+        case Up:
+          x = 80;
+          y = 20;
+          break;
+        case Left:
+          x = 120;
+          y = 20;
+          break;
+      };
+    }
+    
+    public FightTimer getFightTimer(){
+      return new FrogTimer();
+    }
+    
+    public synchronized void attackFrame(){
+      AttackType.Skill attack = currSkill;
+      int moveX, moveY;
+      switch(attack){
+        case NONE:
+          numFrames = (projectile[0].width/sWidth);
+
+          actionFrame(targets[0]);
+          animTime = fframetime();
+          info = new SpriteInfo[1];
+          moveX = (targets[0].sprite.dx-dx)/5;
+          moveY = (targets[0].sprite.dy-dy)/5;
+          info[0] = new SpriteInfo(new Sprite(img.getSubimage(projectile[0].x, projectile[0].y, projectile[0].width, projectile[0].height),
+                                    dx, dy), new Rectangle(0, 0, 20, 20), 20, new Dimension(moveX, moveY), -1, false);
+          setInfo();
+          break;
+        case Tongue:
+          isBinding = true;
+          numFrames = (skilRect[1].width/sWidth);
+          animTime = fframetime(); 
+          
+          info = new SpriteInfo[2];
+
+          actionFrame(targets[0]);
+          
+          makeVectorSprite(projectile[1], targets[0], 1, 0);
+          
+          regForm = new Point(sprite.dx, sprite.dy);
+          damageThreshold = 50;
+          boundBattlers = targets;
+          numBounders = numTargets;
+          setInfo();
+          break;
+        case Item:
+          info = new SpriteInfo[1];
+          switch(determineDirection(new Point(targets[0].sprite.dx, targets[0].sprite.dy))){
+            case Down: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(0, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Right: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(18, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Up: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(36, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Left: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(54, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+          }
+          y = 0;
+          animTime = fframetime()*2;
+          motionCounter = 0;
+          moveCounter = 0;
+          setInfo();
+          break;
+        case Wait:
+          numFrames = 1;
+          info = new SpriteInfo[1];
+          info[0] = new SpriteInfo(null, null, sWidth, null, -1, false);
+          animTime = fframetime();
+          setInfo();
+          break;
+      }
+      setMana(attack);
+      drawInFight();
+    }
+    
+    public void setInfo(){
+      moveCounter = 0;
+      motionCounter = 0;
+      movingSprite = info[0].movingSprite;
+      movingBounds = info[0].movingBounds;
+      animMove = info[0].animMove;
+      move = info[0].movement;
+      numMoves = info[0].numMoves;
+      repeatSprite = info[0].repeatSprite;
+    }
+    
+    public synchronized void makeVectorSprite(Rectangle proj, Battler target, int toR, int toM){
+      Point p = new Point(target.sprite.dx, target.sprite.dy);
+      Point[] directions = new Point[4];
+      int[] numOfSprites = new int[4];
+      Dimension[] differences = new Dimension[4];
+      int signA, signB;
+      for(int i = 0; i < 4; i++){
+        directions[i] = new Point(dx, dy);
+        numOfSprites[i] = 0;
+      }
+      signA = (dx > p.x) ? -1 : 1;
+      signB = (dy > p.y) ? -1 : 1;
+      //straight-up case
+      determineRepeatNum(p, directions, numOfSprites, differences, new Dimension(signA, signB));
+      int counter = 0;
+      int distance = 0;
+      int lowest = (int)(Double.POSITIVE_INFINITY);
+      for(int i = 0; i < 4; i++){
+        distance = (int)Math.sqrt((differences[i].width * differences[i].width) + (differences[i].height * differences[i].height));
+        if(distance < lowest){
+          counter = i;
+          lowest = distance;
+        }
+      }
+
+      Sprite s = null;
+      if(counter == 0){
+        s = new Sprite(img.getSubimage(proj.x+11, proj.y, 11, 8)); 
+      }
+      else if(counter == 1){
+        s = new Sprite(img.getSubimage(proj.x+11, proj.y+8, 11, 8));
+      }
+      else if(counter == 2){
+        s = new Sprite(img.getSubimage(proj.x, proj.y, 11, 8));
+      }
+      else if(counter == 3){
+        s = new Sprite(img.getSubimage(proj.x+22, proj.y, 11, 8));
+      }
+      numRepeat = numOfSprites[counter]/2f;
+      info[0] = new SpriteInfo(this, new Rectangle(x, y, 40, 20), sWidth, new Dimension(differences[counter].width/2, differences[counter].height/2), 2, false);
+      info[1] = new SpriteInfo(s, new Rectangle(0, 0, 11, 8), 11, new Dimension((directions[counter].x-dx)/numOfSprites[counter], (directions[counter].y-dy)/numOfSprites[counter]), 2, true);
+      
+      tongue = s;
+      tongStretch = new Dimension((directions[counter].x-dx)/numOfSprites[counter], (directions[counter].y-dy)/numOfSprites[counter]);
+      //System.out.println("tongStretch: " + tongStretch.width + " " + tongStretch.height);
+    }
+    
+    public void paintMovingSprite(Graphics g){
+      if(movingSprite != null && !repeatSprite && movingSprite != this)
+        movingSprite.paint(g);
+      else if(movingSprite != null && repeatSprite && movingSprite != this){
+        for(int i = 0; i < moveCounter * numRepeat; i++){
+          g.drawImage(tongue.img, (dx-sWidth/2)+(i*tongStretch.width), (dy-5)+(i*tongStretch.height), 11, 8,null);
+        }
+      }
+      else if(isBinding){
+        for(int i = 0; i < numRepeat * 2; i++){
+          g.drawImage(tongue.img, (dx-sWidth/2)+(i*tongStretch.width), (dy-5)+(i*tongStretch.height), 11, 8, null);
+        }    
+        Sprite hit = new Sprite(img.getSubimage(projectile[1].x+22, projectile[1].y+8, 11, 8), boundBattlers[0].sprite.dx, boundBattlers[0].sprite.dy);  
+        hit.paint(g);
+      }
+    }
+
+    public void paint(Graphics g){ 
+      super.paint(g);
+      paintMovingSprite(g);
+    }
+      
+    public class FrogTimer extends FightTimer{
+      
+      public synchronized void run(){ 
+        if(movingSprite == null || motionCounter >= info.length){}
+        else{
+          if(moveCounter == numMoves){
+            motionCounter++;
+            if(motionCounter >= info.length)
+              return;
+            moveCounter = 0;
+            movingSprite = info[motionCounter].movingSprite;
+            movingBounds = info[motionCounter].movingBounds;
+            animMove = info[motionCounter].animMove;
+            move = info[motionCounter].movement;
+            numMoves = info[motionCounter].numMoves;
+            repeatSprite = info[motionCounter].repeatSprite;
+            movingSprite.x = movingBounds.x;
+            movingSprite.y = movingBounds.y;
+          }
+          moveCounter++;
+          movingSprite.dx+=move.width;
+          movingSprite.dy+=move.height;
+          movingSprite.x+=animMove;
+          if(movingSprite.x >= movingBounds.x + movingBounds.width){
+            movingSprite.x = movingBounds.x;
+          }
+        }  
+      }
+      
+    }
+    
+  }
+  
+  public AttackType[] getSkills(){
+    if(isBinding){
+      AttackType[] skill = new AttackType[1];
+      skill[0] = AttackType.RELEASE;
+      return skill;
+    }
+    return super.getSkills();
+  }
+  
+  public int numSkills(){
+    return (isBinding) ? 1 : super.numSkills();
+  }
+  
+  public void setStats(){
+    stats = new Stats(0, 0, 5, 0, 1.0f);
+  }
+    
+  public void handleStatus(){
+    super.handleStatus();
+    boolean lostBound = true;
+    for(int i = 0; i < numBounders; i++){
+      if(boundBattlers[i].isHidden() || boundBattlers[i].health() <= 0){
+        boundBattlers[i].removeBind();
+      }
+      lostBound = lostBound && (boundBattlers[i].isHidden() || boundBattlers[i].health() <= 0);
+    }
+    if(lostBound) 
+      isBinding = false;
+  }
+  
+  public void receiveDamage(int dam){
+    if(!isCovered()){
+      super.receiveDamage(dam);
+      damageThreshold -= dam;
+      if((damageThreshold <= 0 || health() <= 0) && isBinding){
+        sprite.y = 0;
+        isBinding = false;
+        for(int i = 0; i < numBounders; i++)
+          boundBattlers[i].removeBind();
+        sprite.moveSprite(sprite.regForm, 3, sprite.getWalking(sprite.determineDirection(sprite.regForm)));
+        ((FrogSprite)sprite).movingSprite = null;
+      }
+    }
+    else
+      super.receiveDamage(dam);
+  }
+  
+  public boolean availableMana(AttackType.Skill type){
+    switch(type){
+      case Tongue:
+        if(magic() <= 5)
+        return false;
+        return true;
+    }
+    return false;
+  }
+  
+  public void setMana(AttackType.Skill type){
+    switch(type){
+      case Tongue:
+        if(magic() >= 5)
+        useMana(5);
+        return;
+    }
+    return;
+  }
+  
+  public DamageCalculation getDamageTimer(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+    return new FrogDamage(battle, q, attack, inv);
+  }
+  
+  public class FrogDamage extends Battler.DamageCalculation{
+    int tCounter = 0;
+    public FrogDamage(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+      super(battle, q, attack, inv);
+    }
+    
+    public synchronized void run(){
+      switch(currSkill){
+        case NONE:
+          if(tCounter >= numTargets)
+          tCounter = 0;
+          targets[tCounter].receiveDamage((int)atk.damage);
+          btl.removePCDead(queue);
+          btl.removeEnDead(queue);
+          hitCounter++;
+          tCounter++;
+          if(hitCounter >= atk.numOfHits){
+            hitCounter = 0;
+            pause(this);
+          }
+          break;
+        case Tongue:
+          for(int i = 0; i < numBounders; i++)
+            boundBattlers[i].bind();
+          hitCounter++;
+          if(hitCounter >= atk.numOfHits){
+            hitCounter = 0;
+            pause(this);
+          }
+          break;
+        case Release: 
+          for(int i = 0; i < numBounders; i++)
+          boundBattlers[i].removeBind();
+          break;
+        case Item:
+          inv.use(item, targets[0]);
+          break;
+      }
+    }
+    
+  }
+}

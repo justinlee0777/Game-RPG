@@ -1,0 +1,285 @@
+//package Game.Characters;
+//import Game.*;
+
+import java.awt.*;
+
+public class Bruiser extends Member{
+  
+  public Bruiser(AttackType[] skills, Rectangle[] skilRects, Rectangle[] proj, int numSkills){
+    super("Bruiser", skills, numSkills);
+    sprite = new BruiserSprite(skilRects, proj, numSkills);
+    speed = 1.2f;
+    setStats();
+  }
+  
+  public void addStats(){}
+  public void gradeNextBat(){}
+  public void gradeNextCom(){}
+  public void gradeNextMag(){}   
+   
+  public class BruiserSprite extends BattleSprite{
+    //sprite to be moved
+    protected SpriteInfo[] info;
+    //current set of movement
+    protected Sprite movingSprite;
+    protected Rectangle movingBounds;
+    protected int animMove;
+    protected Dimension move;
+    protected int numMoves;
+    protected boolean repeatSprite;
+    //a series of instructions indicating how and when the sprite moves
+    protected int motionCounter;
+    protected int moveCounter;
+    public BruiserSprite(Rectangle[] skilRects, Rectangle[] proj, int numSkills){
+      super("Game/Bruiser.png", 20, 20, new Rectangle(400, 0, 20, 20), new Rectangle(420, 0, 20, 20), skilRects, proj, numSkills, new Rectangle(424, 44, 16, 16), Bruiser.this,
+            new Rectangle(0, 0, 80, 20), new Rectangle(80, 0, 120, 20), new Rectangle(200, 0, 80, 20), new Rectangle(280, 0, 120, 20), new Rectangle(0, 0, 20, 20));
+    }
+    
+    public int fframetime(){
+      return fframetime(currSkill);
+    }
+    
+    public int fframetime(AttackType.Skill skill){
+      switch(skill){
+        case NONE:
+          return 100*(1+Math.abs((int)calculateDistance(new Point(dx, dy), new Point(targets[0].sprite.dx, targets[0].sprite.dy))/(sWidth/2)));
+        case Item: return 100;
+      }
+      return 100*numFrames;
+    }
+    
+    public FightTimer getFightTimer(){
+      return new BruiserTimer();
+    }
+    
+    public void attackFrame(){
+      AttackType.Skill attack = currSkill;
+      int moveX, moveY;
+      int incMoves;
+      switch(attack){
+        //Roller is the first rectangle
+        case NONE:
+          numFrames = (skilRect[0].width/sWidth);
+          x = skilRect[0].x;
+          y = skilRect[0].y;
+          
+          info = new SpriteInfo[3];
+          incMoves = Math.abs((int)calculateDistance(new Point(dx, dy), new Point(targets[0].sprite.dx, targets[0].sprite.dy))/(sWidth/2));
+          if(incMoves > 0){
+            moveX = (targets[0].sprite.dx-dx)/incMoves;
+            moveY = (targets[0].sprite.dy-dy)/incMoves;
+          }
+          else{
+            moveX = 1;
+            moveY = 1;
+          }
+          switch(determineDirection(new Point(targets[0].sprite.dx, targets[0].sprite.dy))){
+            case Down: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(0, 20, 20, 20), sWidth, new Dimension(0, 0), 1, false);
+            info[1] = new SpriteInfo(this, new Rectangle(20, 20, 20, 20), sWidth, new Dimension(moveX, moveY), incMoves, false);
+            info[2] = new SpriteInfo(this, up, sWidth, new Dimension(-moveX, -moveY), incMoves, false);
+            break;
+            case Right: x = 40;
+            info[0] = new SpriteInfo(this, new Rectangle(40, 20, 20, 20), sWidth, new Dimension(0, 0), 1, false);
+            info[1] = new SpriteInfo(this, new Rectangle(60, 20, 20, 20), sWidth, new Dimension(moveX, moveY), incMoves, false);
+            info[2] = new SpriteInfo(this, left, sWidth, new Dimension(-moveX, -moveY), incMoves, false);
+            break;
+            case Up: x = 80;
+            info[0] = new SpriteInfo(this, new Rectangle(80, 20, 20, 20), sWidth, new Dimension(0, 0), 1, false);
+            info[1] = new SpriteInfo(this, new Rectangle(100, 20, 20, 20), sWidth, new Dimension(moveX, moveY), incMoves, false);
+            info[2] = new SpriteInfo(this, down, sWidth, new Dimension(-moveX, -moveY), incMoves, false);
+            break;
+            case Left: x = 120;
+            info[0] = new SpriteInfo(this, new Rectangle(120, 20, 20, 20), sWidth, new Dimension(0, 0), 1, false);
+            info[1] = new SpriteInfo(this, new Rectangle(140, 20, 20, 20), sWidth, new Dimension(moveX, moveY), incMoves, false);
+            info[2] = new SpriteInfo(this, right, sWidth, new Dimension(-moveX, -moveY), incMoves, false);
+            break;
+          }
+          y = 20;      
+          
+          animTime = fframetime()*2 - 100;
+          setInfo();
+          break;
+        case Roller: 
+          numFrames = (skilRect[1].width/sWidth);
+          x = skilRect[1].x; 
+          y = skilRect[1].y;
+          
+          info = new SpriteInfo[2];
+          incMoves = Math.abs((int)calculateDistance(new Point(dx, dy), new Point(targets[0].sprite.dx, targets[0].sprite.dy))/(sWidth/2));
+          if(incMoves > 0){
+            moveX = (targets[0].sprite.dx-dx)/incMoves;
+            moveY = (targets[0].sprite.dy-dy)/incMoves;
+          }
+          else{
+            moveX = 1;
+            moveY = 1;
+          }
+          info[0] = new SpriteInfo(this, skilRect[1], sWidth, new Dimension(moveX, moveY), 5, false);
+          info[1] = new SpriteInfo(this, skilRect[1], sWidth, new Dimension(-moveX, -moveY), 5, false);
+          
+          animTime = fframetime() * 2; 
+          setInfo();
+          break;
+        case Crusher:
+          numFrames = (skilRect[2].width/sWidth);
+          x = skilRect[2].x; 
+          y = skilRect[2].y;
+          
+          info = new SpriteInfo[4];   
+          animTime = fframetime() * 4; 
+          
+          Point[] pos = new Point[4];
+          pos[0] = new Point(dx, dy);
+          int n = 0;
+          for(int i = 1; i < 4; i++){
+            if(n >= numTargets)
+              n = 0;
+            pos[i] = new Point(targets[n].sprite.dx, targets[n].sprite.dy);
+            n++;
+          }
+          for(int i = 0; i < 3; i++){
+            moveX = (pos[i].x-pos[i+1].x)/5;
+            moveY = (pos[i].y-pos[i+1].y)/5;
+            info[i] = new SpriteInfo(this, skilRect[2], sWidth, new Dimension(-moveX, -moveY), 5, false);
+          }
+          
+          moveX = (pos[3].x-pos[0].x)/5;
+          moveY = (pos[3].y-pos[0].y)/5;
+          info[3] = new SpriteInfo(this, skilRect[2], sWidth, new Dimension(-moveX, -moveY), 5, false);
+          setInfo();
+          break;
+        case Item:
+          info = new SpriteInfo[1];
+          switch(determineDirection(new Point(targets[0].sprite.dx, targets[0].sprite.dy))){
+            case Down: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(0, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Right: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(18, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Up: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(36, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Left: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(54, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+          }
+          y = 0;
+          animTime = fframetime()*2;
+          motionCounter = 0;
+          moveCounter = 0;
+          setInfo();
+          break;
+      }
+      setMana(attack);
+      drawInFight();
+    }
+  
+    public void setInfo(){
+      moveCounter = 0;
+      motionCounter = 0;
+      movingSprite = info[0].movingSprite;
+      movingBounds = info[0].movingBounds;
+      animMove = info[0].animMove;
+      move = info[0].movement;
+      numMoves = info[0].numMoves;
+      repeatSprite = info[0].repeatSprite;
+    }
+    
+    public class BruiserTimer extends FightTimer{
+      
+      public void run(){ 
+        if(movingSprite == null){}
+        else{
+          if(moveCounter == numMoves || motionCounter >= info.length){
+            motionCounter++;
+            if(motionCounter >= info.length)
+              return;
+            moveCounter = 0;
+            movingSprite = info[motionCounter].movingSprite;
+            movingBounds = info[motionCounter].movingBounds;
+            animMove = info[motionCounter].animMove;
+            move = info[motionCounter].movement;
+            numMoves = info[motionCounter].numMoves;
+            repeatSprite = info[motionCounter].repeatSprite;
+            movingSprite.x = movingBounds.x;
+            movingSprite.y = movingBounds.y;
+          }
+          moveCounter++;
+          movingSprite.dx+=move.width;
+          movingSprite.dy+=move.height;
+          movingSprite.x+=animMove;
+          if(movingSprite.x >= movingBounds.x + movingBounds.width){
+            movingSprite.x = movingBounds.x;
+          }
+        }
+      }  
+    }
+
+  }
+  
+  public void setStats(){
+    stats = new Stats(25, 0, 5, 0, 0.5f);
+  }
+  
+  public boolean availableMana(AttackType.Skill type){
+    switch(type){
+      case Roller:
+        if(magic() >= 10)
+        return true;
+      case Crusher:
+        if(magic() >= 25)
+        return true;
+    }
+    return false;
+  }
+  
+  public void setMana(AttackType.Skill type){
+    switch(type){
+      case Roller:
+        useMana(10);
+        break;
+      case Crusher:
+        useMana(25);
+        break;
+    }
+    return;
+  }
+  
+  public DamageCalculation getDamageTimer(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+    return new BruiserDamage(battle, q, attack, inv);
+  }
+  
+  public class BruiserDamage extends Battler.DamageCalculation{
+    int tCounter = 0;
+    public BruiserDamage(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+      super(battle, q, attack, inv);
+    }
+    
+    public synchronized void run(){
+      switch(currSkill){
+        case NONE:
+        case Roller:
+        case Crusher:
+          if(tCounter >= numTargets)
+          tCounter = 0;
+          targets[tCounter].receiveDamage((int)atk.damage);
+          btl.removePCDead(queue);
+          btl.removeEnDead(queue);
+          hitCounter++;
+          tCounter++;
+          if(hitCounter >= atk.numOfHits){
+            hitCounter = 0;
+            pause(this);
+          }
+          break;
+        case Item:
+          inv.use(item, targets[0]);
+          break;
+      }
+    }
+    
+  }
+  
+}

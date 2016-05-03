@@ -1,0 +1,115 @@
+import java.awt.*;
+import java.io.IOException;
+import java.awt.image.BufferedImage;
+
+
+public class Classroom extends Grid{
+  
+  public Classroom(FieldCharacter c){
+    super(c);
+    c.cNode = createGrid(c, null);
+  }
+  
+  public Classroom(FieldCharacter c, int ste){
+    super(c, ste);
+    c.cNode = createGrid(c, null);
+  }
+    
+  public Classroom(FieldCharacter c, Story story, int ste){
+    super(c, ste);
+    c.cNode = createGrid(c, story);
+  }
+  
+  public Grid getNorthGrid(FieldCharacter c, Story story){ return null; }
+  public Grid getEastGrid(FieldCharacter c, Story story){ return null; }
+  public Grid getSouthGrid(FieldCharacter c, Story story) { return null; } 
+  public Grid getWestGrid(FieldCharacter c, Story story) { return null; }
+  
+  public DrawTree.Node createGrid(FieldCharacter c, Story story){
+    int tw, ty;
+    BufferedImage tile = null;
+    Queue<Incident> incQ; 
+   
+    tile = imageCreator.makeImage("Sprites/Tiles/Green Tile.png");
+    init(192, 288, tile);
+    tw = tileSize.width;
+    ty = tileSize.height;
+    northP = new Point(dtot(5), dtot(0));
+    camera = new Rectangle(0, 0, tw*9, ty*12);
+    s_size = new Size(tw*9, ty*12);
+    //setCamera(c);
+    
+    tile = imageCreator.makeImage("Sprites/Tiles/Green Impass.png");
+    
+    for(int i = 0; i < 5; i++){
+      tiles[i][0] = new Tile(tile, dtot(i), dtot(0));
+      tiles[i][0].setPassable(false);
+      tiles[11-i][0] = new Tile(tile, dtot(11-i), dtot(0));
+      tiles[11-i][0].setPassable(false);
+    }
+    
+    for(int j = 3; j < 14; j+=2){
+      addObject("Sprites/Table.png", 2, j, 2, 1);
+      addObject("Sprites/Table.png", 8, j, 2, 1);
+    }
+    
+    Tile can = new Tile("Sprites/Can.png", dtot(4), dtot(1), false);
+    // add to drawTree
+    tiles[4][1].setOverlap(can);
+    
+    Tile[][] backboard = new Tile[6][1];
+    setOverlap(backboard, 2, 17, 6, 1);
+    
+    switch(state){
+      case 1: {
+        NPC otso = ActorConstructor.makeNPC(ActorConstructor.Actor.Otso, dtot(6), dtot(16), null);
+        addNPCTile(ActorConstructor.Actor.LGalahad, 2, 10, 0, 4, addMessage("Everything seems to be in a linear fashion nowadays..."), true);
+        addNPCTile(ActorConstructor.Actor.Kurtle, 8, 10, 0, 4, addMessage("I'm sure this isn't a real class..."), true);
+        addNPCTile(ActorConstructor.Actor.PGirl, 8, 8, -4, 0, addMessage("...Hi!"), true);
+        addNPCTile(ActorConstructor.Actor.Alternado, 3, 8, 0, 4, addMessage("Bwaha! I'll take you out for a spin!"), true);
+        addNPCTile(ActorConstructor.Actor.Anubis, 6, 12, addMessage("Mrrrrr..."), true);
+        addNPCTile(otso, new Incident[]{new Incident(otso, "Mister Zeke, I hope this time you won't be sleeping during lecture?...", Classroom.this), 
+          new Incident(c, "Ehehe. Sorry about the other times.", Classroom.this), new Incident(c, "Sorry for \"bear\"-ing upon you so.", Classroom.this),
+          new Incident(otso, "...", Classroom.this), new Incident(c, "...", Classroom.this), new Incident(otso, "I don't crave an apology, you simply must come to know the material.", Classroom.this), 
+          new Incident(c, "Yes. (Sorry.)", Classroom.this)}, true);
+        
+        //Make customized fonts?
+        addDialogueTile(new DialogueTile(backboard, 6, 1, addMessage("Shapeshifting: 1) It is impossible to transform beyond your bodily compositon 2) Most spells combine the shifting with excresence")));
+    
+        putTilesInTree(tiles);
+        c.setCoordinates(cNode, drawTree, dtot(5), dtot(0));
+        DrawTree.Node cNode = drawTree.add(c);
+        
+        incQ = new Queue<Incident>();
+        incQ.add(new Incident(new AnimatedScript(c, 0, ty*5, 2, c.down, this, cNode, drawTree)));
+        pre_scene.add(incQ);
+        /*
+         addSprite(new FieldEnemy(c, Classroom.this, ActorConstructor.makeNPC(ActorConstructor.Actor.Frog, northP.x, dtot(3), ActorSprite.Direction.Down, null), BattlerConstructor.EnemyType.Irritants));
+         incQ = new Queue<Incident>();
+         incQ.add(new Incident("Ribbit ribbit!", Classroom.this));
+         incQ.add(new Incident(sprites[0], 0, ty*5, 15,true, ((FieldEnemy)sprites[0]).down)); 
+         incQ.add(new Incident(sprites[0], 0, 0, new Rectangle(0, 0, 20, 20)));
+         incQ.add(new Incident("You guys are in for it now!!!", Classroom.this));
+         incQ.add(new Incident((FieldEnemy)sprites[0], true));
+         incQ.add(new Incident("We'll remember this!", Classroom.this));
+         incQ.add(new Incident(sprites[0], 0, -ty*10, ((FieldEnemy)sprites[0]).up)); 
+         addScriptedTile(new ScriptedTile(dtot(0), dtot(7), tw*15, ty*1, true, incQ));
+         */
+        return cNode;
+      }
+      /*
+      putTilesInTree(tiles);
+      DrawTree.Node cNode = drawTree.add(c);
+      c.setCoordinates(cNode, drawTree, dtot(5)+2, dtot(0));
+      setCamera(c);
+      return cNode;
+      */
+    }
+    
+    DrawTree.Node cNode = drawTree.add(c);
+    c.setCoordinates(cNode, drawTree, dtot(5), dtot(9));
+    setCamera(c);
+    return cNode;
+  }
+  
+}

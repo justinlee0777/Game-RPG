@@ -1,0 +1,424 @@
+//package Game.Characters;
+//import Game.*;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
+public class Gem extends Member{
+
+  public Gem(AttackType[] skills, Rectangle[] skilRects, Rectangle[] proj, int numSkills){
+    super("Gem", skills, numSkills);
+    sprite = new GemSprite(skilRects, proj, numSkills);
+    speed = 1.1f;
+    setStats();
+  }
+  
+  public void addStats(){}
+  public void gradeNextBat(){}
+  public void gradeNextCom(){}
+  public void gradeNextMag(){}   
+
+  public class GemSprite extends BattleSprite{
+    //Gem Sprite
+    protected GemTool gemTool;
+    protected Point gemLocation;
+    //current set of movement
+    protected SpriteInfo[] info;
+    protected Sprite movingSprite;
+    protected Rectangle movingBounds;
+    protected int animMove;
+    protected Dimension move;
+    protected int numMoves;
+    protected boolean repeatSprite;
+    //
+    protected float numRepeat;
+    //a series of instructions indicating how and when the sprite moves
+    protected int motionCounter;
+    protected int moveCounter;
+    
+    public GemSprite(Rectangle[] skilRects, Rectangle[] proj, int numSkills){
+      super("Game/Gem.png", 18, 18, new Rectangle(180, 0, 18, 18), new Rectangle(198, 0, 18, 18), skilRects, proj, numSkills, new Rectangle(200, 38, 16, 16), Gem.this,
+            new Rectangle(0, 0, 54, 18), new Rectangle(54, 0, 36, 18), new Rectangle(90, 0, 54, 18), new Rectangle(144, 0, 36, 18), new Rectangle(0, 0, 18, 18));
+      BufferedImage gImg = img.getSubimage(0, 38, 35, 9);
+      gemTool = new GemTool(gImg);
+    }
+    
+    public int fframetime(){
+      return fframetime(currSkill);
+    }
+    
+    public int fframetime(AttackType.Skill skill){
+      int time = 0;
+      switch(skill){
+        case NONE:
+          time =  100*Math.abs((int)calculateDistance(new Point(gemTool.dx, gemTool.dy), new Point(targets[0].sprite.dx, targets[0].sprite.dy))/(gemTool.sWidth*2));
+        case GemGuard:
+          time =  (100 * numFrames);
+        case Laser:
+          time =  100 * 6;
+        case Item: time =  100;
+      }
+      if(time > 0)
+        return time;
+      return 100;
+    }
+    
+    public synchronized void standFrame(){
+      super.standFrame();
+      gemTool.returnOwner();
+      movingSprite = null;
+    }
+    
+    public synchronized void standFrame(Point p){
+      super.standFrame(p);
+      gemTool.returnOwner();
+      movingSprite = null;
+    }
+    
+    public void actionFrame(){
+      switch(determineDirection(new Point(targets[0].sprite.dx, targets[0].sprite.dy))){
+        case Down:
+          x = 0;
+          break;
+        case Right:
+          x = 36;
+          break;
+        case Up:
+          x = 72;
+          break;
+        case Left:
+          x = 108;
+          break;
+      };
+      y = 18;
+    }
+    
+    public FightTimer getFightTimer(){
+      return new GemTimer();
+    }
+    
+    public synchronized void attackFrame(){
+      AttackType.Skill attack = currSkill;   
+      int moveX, moveY;
+      //repeatSprite = false;
+      switch(attack){
+        case NONE:     
+          actionFrame();
+          
+          info = new SpriteInfo[2];
+          int incMoves = (int)calculateDistance(new Point(gemTool.dx, gemTool.dy), new Point(targets[0].sprite.dx, targets[0].sprite.dy))/(gemTool.sWidth*2);
+          if(incMoves > 0){
+            moveX = (targets[0].sprite.dx-dx)/incMoves;
+            moveY = (targets[0].sprite.dy-dy)/incMoves;
+          }
+          else{
+            moveX = 1;
+            moveY = 1;
+          }
+          info[0] = new SpriteInfo(gemTool, new Rectangle(0, 0, 35, 9), 0, new Dimension(moveX, moveY), incMoves, false);
+          info[1] = new SpriteInfo(gemTool, new Rectangle(0, 0, 35, 9), 0, new Dimension(-moveX, -moveY), incMoves, false);
+          animTime = (fframetime()*2);
+          setInfo();
+          break;
+        case Laser:
+          //the idea: calculate distance from target with preset values
+          //then calculate the distance required to be moved by sprite to reach there
+          //three motions: move, laser, move back
+          numFrames = (skilRect[1].width/sWidth);
+          
+          actionFrame();
+          
+          info = new SpriteInfo[3];
+          animTime = fframetime()*3/2;
+          
+          makeVectorSprite(projectile[1], targets[0], 1, 0, 2);
+          setInfo();
+          break;
+        case GemGuard:
+          numFrames = (skilRect[2].width/sWidth);
+
+          actionFrame();
+          info = new SpriteInfo[1];
+          info[0] = new SpriteInfo(null, null, sWidth, null, -1, false);
+          animTime = fframetime();
+          setInfo();
+          break;
+        case Item:
+          info = new SpriteInfo[1];
+          switch(determineDirection(new Point(targets[0].sprite.dx, targets[0].sprite.dy))){
+            case Down: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(0, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Right: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(18, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Up: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(36, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+            case Left: x = 0;
+            info[0] = new SpriteInfo(this, new Rectangle(54, 18, 18, 18), sWidth, new Dimension(0, 0), 1, false);
+            break;
+          }
+          y = 0;
+          animTime = fframetime()*2;
+          motionCounter = 0;
+          moveCounter = 0;
+          setInfo();
+          break;
+      }
+      setMana(attack);
+      drawInFight();
+    }
+    
+    public void setInfo(){
+      moveCounter = 0;
+      motionCounter = 0;
+      movingSprite = info[0].movingSprite;
+      movingBounds = info[0].movingBounds;
+      animMove = info[0].animMove;
+      move = info[0].movement;
+      numMoves = info[0].numMoves;
+      repeatSprite = info[0].repeatSprite;
+    }
+    
+    //extend each sprite furthest then when one dimension is == 0 check to see which has the closest end point distance
+    //to target, and the remaining distance will be from sprite to sprite back
+    //proj -- projectile rectangle, target -- target, toR -- to Repeat, toM -- to Move, toRe -- to Return back
+    //goes by sprite sheet convention
+    
+    public void makeVectorSprite(Rectangle proj, Battler target, int toR, int toM, int toRe){
+      Point p = new Point(target.sprite.dx, target.sprite.dy);
+      Point[] directions = new Point[4];
+      int[] numOfSprites = new int[4];
+      Dimension[] differences = new Dimension[4];
+      int sign;
+      for(int i = 0; i < 4; i++){
+        directions[i] = new Point(gemTool.dx, gemTool.dy);
+        numOfSprites[i] = 0;
+      }
+      //straight-up case
+      sign = (gemTool.dy > p.y) ? -1 : 1; 
+      while(p.y < directions[0].y){
+        directions[0].y+=7 * sign;
+        numOfSprites[0]++;
+      }
+      differences[0] = new Dimension(p.x-directions[0].x, p.y-directions[0].y);
+      //straight horizontal case
+      sign = (gemTool.dx > p.x) ? -1 : 1;
+      while(p.x < directions[1].x){
+        directions[1].x+=10 * sign;
+        numOfSprites[1]++;
+      }
+      differences[1] = new Dimension(p.x-directions[1].x, p.y-directions[1].y);
+      //northeast way
+      sign = (gemTool.dy > p.y) ? -1 : 1;
+      while(p.x > directions[2].x && p.y < directions[2].y){
+        directions[2].x+=10;
+        directions[2].y+=7 * sign;
+        numOfSprites[2]++;
+      }
+      differences[2] = new Dimension(p.x-directions[2].x, p.y-directions[2].y);
+      //northwest way
+      sign = (gemTool.dy > p.y) ? -1 : 1;
+      while(p.x < directions[3].x && p.y < directions[3].y){
+        directions[3].x-=10;
+        directions[3].y+=7 * sign;
+        numOfSprites[3]++;
+      }
+      differences[3] = new Dimension(p.x-directions[3].x, p.y-directions[3].y);
+      int counter = 0;
+      int distance = 0;
+      int lowest = (int)(Double.POSITIVE_INFINITY);
+      for(int i = 0; i < 4; i++){
+        distance = (int)Math.sqrt((differences[i].width * differences[i].width) + (differences[i].height * differences[i].height));
+        if(distance < lowest){
+          counter = i;
+          lowest = distance;
+        }
+      }
+      Sprite s = null;
+      if(counter == 0){
+        s = new Sprite(img.getSubimage(proj.x+10, proj.y, 10, 7)); 
+      }
+      else if(counter == 1){
+        s = new Sprite(img.getSubimage(proj.x+10, proj.y+7, 10, 7));
+      }
+      else if(counter == 2){
+        s = new Sprite(img.getSubimage(proj.x+20, proj.y, 10, 7));
+      }
+      else if(counter == 3){
+        s = new Sprite(img.getSubimage(proj.x, proj.y, 10, 7));
+      }
+      numRepeat = (float)(numOfSprites[counter]/3f);
+      info[0] = new SpriteInfo(gemTool, new Rectangle(0, 0, 35, 9), gemTool.sWidth, new Dimension(differences[counter].width/3, differences[counter].height/3), 3, false);
+      info[1] = new SpriteInfo(s, new Rectangle(0, 0, 10, 7), 10, new Dimension( (directions[counter].x-gemTool.dx)/numOfSprites[counter], (directions[counter].y-gemTool.dy)/numOfSprites[counter]), 3, true);
+      info[2] = new SpriteInfo(gemTool, new Rectangle(0, 0, 35, 9), gemTool.sWidth, new Dimension(-differences[counter].width/3, -differences[counter].height/3), 3, false);
+    }
+    
+    public void paintMovingSprite(Graphics g){
+      if(movingSprite != null && !repeatSprite && movingSprite != this && movingSprite != gemTool)
+        movingSprite.paint(g);
+      else if(movingSprite != null && repeatSprite && movingSprite != this && movingSprite != gemTool){
+        for(int i = 0; i < moveCounter * numRepeat; i++){
+          g.drawImage(movingSprite.img, gemTool.dx+(i*move.width), gemTool.dy+(i*move.height), gemTool.dx+(i*move.width)+10, gemTool.dy+(i*move.height)+7,
+                      movingSprite.x, movingSprite.y, movingSprite.x+movingSprite.width, movingSprite.y+movingSprite.height, null);
+        }
+        if(moveCounter == 2){
+          Sprite hit = new Sprite(img.getSubimage(projectile[1].x+20, projectile[1].y+7, 10, 7), targets[0].sprite.dx, targets[0].sprite.dy);  
+          hit.paint(g);
+        }
+      }
+      
+    }
+    
+    public void paint(Graphics g){
+      super.paint(g);
+      gemTool.paint(g);
+      paintMovingSprite(g);
+    }
+    
+    public class GemTimer extends FightTimer{
+      
+      public synchronized void run(){ 
+        if(movingSprite == null || motionCounter >= info.length){}
+        else{
+          if(moveCounter == numMoves){
+            motionCounter++;
+            if(motionCounter >= info.length)
+              return;
+            moveCounter = 0;
+            movingSprite = info[motionCounter].movingSprite;
+            movingBounds = info[motionCounter].movingBounds;
+            animMove = info[motionCounter].animMove;
+            move = info[motionCounter].movement;
+            numMoves = info[motionCounter].numMoves;
+            repeatSprite = info[motionCounter].repeatSprite;
+            movingSprite.x = movingBounds.x;
+            movingSprite.y = movingBounds.y;
+          }
+          moveCounter++;
+          movingSprite.dx+=move.width;
+          movingSprite.dy+=move.height;
+          movingSprite.x+=animMove;
+          if(movingSprite.x >= movingBounds.x + movingBounds.width){
+            movingSprite.x = movingBounds.x;
+          }
+
+        }  
+      }
+      
+    }
+  }
+  
+  public class GemTool extends Sprite{
+    Battler currBattler;
+    int nextForm, count;
+    public GemTool(BufferedImage gImg){
+      super(gImg, 0, 0, 7, 9);
+      currBattler = Gem.this;
+      nextForm = 5;
+      count = 0;
+    }
+    
+    public void returnOwner(){
+      if(currBattler == Gem.this)
+        setCoordinates(sprite.dx-sprite.sWidth/2-2, sprite.dy-sprite.sHeight/2-2);
+      else{
+        setCoordinates(currBattler.sprite.dx, currBattler.sprite.dy);
+      }
+    }
+    
+    public void paint(Graphics g){
+      if(count == nextForm){
+        x+=sWidth;
+        count = 0;
+      }
+      else
+        count++;
+      if(x >= width){
+        x = 0;
+      }
+      if(currBattler == Gem.this)
+        super.paint(g);
+      else
+        g.drawImage(img, dx-sWidth, dy-sHeight, (dx+sWidth), (dy+sHeight), x, y, x+sWidth, y+sHeight, this);
+    }
+  }
+  
+  public void setStats(){
+    stats = new Stats(0, 50, 0, 5, 0);
+  }
+  
+  public boolean availableMana(AttackType.Skill type){
+    switch(type){
+      case Laser:
+        if(magic() >= 25)
+        return true;
+      case GemGuard:
+        if(magic() >= 10)
+        return true;
+    }
+    return false;
+  }
+  
+  public void setMana(AttackType.Skill type){
+    switch(type){
+      case Laser:
+        if(magic() >= 25)
+        useMana(25);
+        break;
+      case GemGuard:
+        if(magic() >= 10)
+        useMana(10);
+        break;
+    }
+    return;
+  }
+  
+  public DamageCalculation getDamageTimer(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+    return new GemDamage(battle, q, attack, inv);
+  }
+  
+  public class GemDamage extends Battler.DamageCalculation{
+    int tCounter = 0;
+    public GemDamage(Battle battle, Queue<Battler> q, Attack attack, Inventory inv){
+      super(battle, q, attack, inv);
+    }
+    
+    public synchronized void run(){
+      switch(currSkill){
+        case NONE:
+        case Laser:
+          if(tCounter >= numTargets)
+          tCounter = 0;
+          targets[tCounter].receiveDamage((int)atk.damage);
+          btl.removePCDead(queue);
+          btl.removeEnDead(queue);
+          hitCounter++;
+          tCounter++;
+          if(hitCounter >= atk.numOfHits){
+            hitCounter = 0;
+            pause(this);
+          }
+          break;
+        case GemGuard:
+          if(tCounter >= numTargets)
+          tCounter = 0;
+          ((GemSprite)sprite).gemTool.currBattler.removeGuard();
+          ((GemSprite)sprite).gemTool.currBattler = targets[0];
+          targets[0].addGuard();
+          hitCounter++;
+          tCounter++;
+          if(hitCounter >= atk.numOfHits){
+            hitCounter = 0;
+            pause(this);
+          }
+          break;
+        case Item:
+          inv.use(item, targets[0]);
+          break;
+      }
+    }
+    
+  }
+}
