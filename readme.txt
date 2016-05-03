@@ -1,4 +1,4 @@
-Here lays one of the greatest monuments to hubris ever: began in the summer of 2013 and continued onward to the winter, I was entirely devoted to creating a game that in the beginning showed great promise to be, if not good, then at least working. But, unless I sufficiently humiliate myself before it, this will not come to be.
+Here lays one of the greatest monuments to hubris ever: began in the summer of 2014 and continued onward to the winter, I was entirely devoted to creating a game that in the beginning showed great promise to be, if not good, then at least working. But, having stopped at precisely the winter of 2015, unless I sufficiently humiliate myself before it, this will not come to be.
 
 This project at least advocates for three things:
 1) Version Control (which is why it is being moved to GitHub)
