@@ -11,6 +11,9 @@ Right now the main problem (conceptually) with the program is that there is a Fi
 
 The other main problem, a literal problem, is the fact that every object drawn is relegated to a "DrawTree", something which is not a bad idea: since the characters do not move gridpoint to gridpoint (which I should strongly consider) the DrawTree helps to find which objects should overlap which objects - by its inherent sorting it prioritizes which should be drawn first. The problem with the DrawTree, though, is that it contains leverage over the drawing of the entire program, and everything else must adapt to its prioritization.
 
+Other issues:
+- Remove dependence on switching boolean variables to control state (so the keyword 'volatile' doesn't have to appear everywhere)
+
 To run from main directory:
 javac *.java Characters/*.java Grids/*.java Tutorial/*.java
 find -name "*.java" > source.txt

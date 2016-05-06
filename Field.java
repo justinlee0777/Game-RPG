@@ -56,17 +56,8 @@ public class Field extends Sprite implements KeyListener{
   //item menu
   private boolean itemMenuOn = false;
   private int itCounter = 0;
-  
-  
-  //
-  private boolean inBattle = false;
-  private boolean inField = true;
-  private boolean inCutscene = false;
-  protected boolean inMap = false;
-  private boolean inExp = false;
-
-  
-  private GameState gameState;
+    
+  protected GameState gameState;
   
   public Field(FieldCharacter sprite, PlayerParty pparty){
     c = sprite;

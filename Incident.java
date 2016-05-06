@@ -184,7 +184,7 @@ public class Incident extends Object{
       return sequence;
     }
     else if(moveDest){
-      field.inMap = true;
+      field.gameState = Field.GameState.inMap;
       field.map.setChars(partyNPCs);
       field.map.setDestination(region, floor/*, charPoint*/);
       //field.map.setDestination(story.getGrid(floor), gridNum, charPoint);

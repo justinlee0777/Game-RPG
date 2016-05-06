@@ -11,7 +11,7 @@ public class Cutscene extends Sprite implements KeyListener{
   //private Incident currInc;
   private IncidentHandler inHandle;
   //private Graphics2D fieldG;
-  private boolean messageOver = false;
+  private volatile boolean messageOver = false;
   public volatile boolean isFinished = false;
   
   private volatile boolean forceBattle = false;

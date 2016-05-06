@@ -86,7 +86,7 @@ public class Map extends Sprite{
       field.setCutscene(field.currGrid/*.getCutscene(field, field.backbuffer, fChar)*/);
       slct = dest;
       //field.drawFrame = new Rectangle(field.width/2*(int)zoom.width, field.height/2*(int)zoom.height, 0, 0);
-      field.inMap = false;
+      field.gameState = Field.GameState.inField;
     }
     super.paint(g);
     for(int i = 0; i < locationPoints.length; i++){
