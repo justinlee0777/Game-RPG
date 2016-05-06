@@ -266,7 +266,7 @@ public class DrawTree{
       return str;
     }
     
-/*
+
     //fix: move all of node's children too
     public synchronized void requestMove(DrawTree tree){
       
@@ -329,7 +329,7 @@ public class DrawTree{
             // 'this' has a parent, left, right: ?
             else if(this.left != null){
               //should logically have no left
-              /*
+              
               //inefficient sorting?
               Node exchange = this.left;
               while(exchange.right != null){
@@ -477,7 +477,7 @@ public class DrawTree{
         //DFS();
       }
     }
-    */
+    
   }
   
 }

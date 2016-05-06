@@ -5,7 +5,8 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Ellipse2D;
 
 public class FieldCharacter extends NPC{
-  private int num, numFrames;
+  private volatile int num;
+  private int numFrames;
   private Rectangle currWalk;
   //int dx, dy;
   protected ActorSprite.Direction dir;
@@ -31,7 +32,7 @@ public class FieldCharacter extends NPC{
   }
  
   public void setNode(DrawTree.Node node){ cNode = node;}
-  //public void requestUpdate(DrawTree tree){ cNode.requestMove(tree); }
+  public void requestUpdate(DrawTree tree){ cNode.requestMove(tree); }
   
   public void setCoordinates(DrawTree.Node node, DrawTree tree, int destx, int desty){
     super.setCoordinates(node, tree, destx, desty);
@@ -113,14 +114,15 @@ public class FieldCharacter extends NPC{
       num = 0;
       x+=sWidth;
     }
-    if(x >= (currWalk.x + currWalk.width))
+    if(x >= (currWalk.x + currWalk.width)){
       switch(dir){
-      case Up: 
-      case Down:
-        x = currWalk.x+sWidth; break;
-      case Right:
-      case Left:
-        x = currWalk.x; break;
+        case Up: 
+        case Down:
+          x = currWalk.x+sWidth; break;
+        case Right:
+        case Left:
+          x = currWalk.x; break;
+      }
     }
     bounds = new Rectangle(dx-sWidth/2, dy-sHeight/2, sWidth, sHeight);
     shadow = new Ellipse2D.Double(dx-sWidth/3, dy+sHeight/4, sWidth*2/3, sHeight/2);

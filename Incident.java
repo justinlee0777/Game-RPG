@@ -18,7 +18,7 @@ public class Incident extends Object{
   //for animation
   private Queue<Sprite> sequence;
   //for forced battles
-  protected boolean isBattle = false;
+  protected volatile boolean isBattle = false;
   protected FieldEnemy en;
   //to stop paintings
   protected boolean stopPaint = false;

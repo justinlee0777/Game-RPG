@@ -98,7 +98,7 @@ public class Sprite extends Canvas{
     dx = destX;
     dy = destY;
     setBounds(dx, dy, sWidth, sHeight);
-    //node.requestMove(tree);
+    node.requestMove(tree);
     init();
   }
   

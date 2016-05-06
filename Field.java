@@ -62,7 +62,7 @@ public class Field extends Sprite implements KeyListener{
   public Field(FieldCharacter sprite, PlayerParty pparty){
     c = sprite;
     pp = pparty;
-    mveSpd = 1;
+    mveSpd = 2;
     try{
       window = ImageIO.read(getClass().getResource("Sprites/Window.png"));
       alphabet = ImageIO.read(getClass().getResource("Sprites/Alphabet.png"));
@@ -142,7 +142,7 @@ public class Field extends Sprite implements KeyListener{
             c.dx-=mveSpd;
           }
           else{
-            //c.requestUpdate(currGrid.drawTree);
+            c.requestUpdate(currGrid.drawTree);
             //cam_shftx = 2;
           }
        
@@ -185,7 +185,7 @@ public class Field extends Sprite implements KeyListener{
             c.dy+=mveSpd;
           }
           else{
-            //c.requestUpdate(currGrid.drawTree);
+            c.requestUpdate(currGrid.drawTree);
             //cam_shfty = -2;
           }
           
@@ -207,7 +207,7 @@ public class Field extends Sprite implements KeyListener{
             c.dy-=mveSpd;
           }
           else{
-            //c.requestUpdate(currGrid.drawTree);
+            c.requestUpdate(currGrid.drawTree);
             //cam_shfty = 2;
           }
           
@@ -914,10 +914,10 @@ public class Field extends Sprite implements KeyListener{
       while(true){
         if( gameState.equals(GameState.inBattle) && gPanel.finished){
           if(cutscene != null){
-            gameState.equals(GameState.inCutscene);
+            gameState = GameState.inCutscene;
           }
           else{
-            gameState.equals(GameState.inField);
+            gameState = GameState.inField;
           }
           currGrid.removeTempSprite();
           gPanel = null;
@@ -927,7 +927,7 @@ public class Field extends Sprite implements KeyListener{
         else if( !gameState.equals(GameState.inBattle) && (checkEnemyHit() || forceBattle()) ){
           getBattlePositions(getEnemies());
           makeBattle(getEnemies());
-          gameState.equals(GameState.inBattle);
+          gameState = GameState.inBattle;
           //inMap = false;
           //preBattle = true;
           //preBattle do some method

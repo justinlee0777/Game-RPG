@@ -345,11 +345,11 @@ public class AnimatedScript extends Sprite{
 
         num++;  
       }
-/*
+
       if(adjustTree){
         node.requestMove(tree);
       }
-*/
+
       if(num >= numOfCycles){
         ceased = true;
         sprite.x = iterated.x;
